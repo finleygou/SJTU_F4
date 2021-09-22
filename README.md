@@ -2,40 +2,42 @@
 
 ## lidar_test.py
 
-## 功能
+- #### 功能
+
 
 1. 场景判断
 2. 充当超声波传感器
 
 
 
-## 场景判断
+- #### 场景判断
 
-使用变量flag_scene表示
+  使用变量flag_scene表示：
 
-flag_scene = 0：正常巡线
+  flag_scene = 0：正常巡线；
 
-flag_scene = 1：停车时过虚线那个弯的阶段
+  flag_scene = 1：停车时过虚线那个弯的阶段；
 
-flag_scene = 2:   进桥洞或者上桥前的阶段（注意是前），有一个减速动作
+  flag_scene = 2:   进桥洞或者上桥前的阶段（注意是前），有一个减速动作；
 
-flag_scene = 3:   桥洞中以及桥面上的阶段，使用雷达测距的pid控制。这个状态下将发布一个Twist控制指令，由kinematics.py订阅，话题名为 /scan_vel. kinematics中根据优先级选择使用/scan_vel或者/lane_vel控制小车
+  flag_scene = 3:   桥洞中以及桥面上的阶段，使用雷达测距的pid控制。这个状态下将发布一个Twist控制指令，由kinematics.py订阅，话题名为 /scan_vel. kinematics中根据优先级选择使用/scan_vel或者/lane_vel控制小车；
+
+  
+
+​		将flag_scene发布，由lane_detection_SK_Demo订阅，话题名为 /scanInfo，int32
 
 
 
-将flag_scene发布，由lane_detection_SK_Demo订阅，话题名为 /scanInfo，int32
+- #### 超声传感器
 
-
-
-## 超声传感器
-
-以话题名 /back_distance 发布。int32类型。停车使用，由kinematics.py订阅
+  以话题名 /back_distance 发布。int32类型。停车使用，由kinematics.py订阅
 
 
 
 ## lane_detection_SK_Demo.py
 
-## 功能
+- #### 功能
+
 
 1. 发布交通标志和置信度，由kinematics.py订阅
 2. 处理图像，得到俯视黑白图binary_warped
@@ -46,19 +48,19 @@ flag_scene = 3:   桥洞中以及桥面上的阶段，使用雷达测距的pid�
 
 
 
-## binary_warped
+- #### binary_warped
 
-720*1280
+  720*1280
 
-binary_warped[ y ] [ x ],  y轴向下x轴向右
+  binary_warped[ y ] [ x ],  y轴向下x轴向右
 
 
 
-## lane_base计算
+- #### lane_base计算
 
-若有两条线，即lane_num=2, 认为第一根为lane_base_LT, 第二根为lane_base_RT
+  若有两条线，即lane_num=2, 认为第一根为lane_base_LT, 第二根为lane_base_RT
 
-如果只有一条线，先默认这条线为右线lane_base_RT，后续继续判断
+  如果只有一条线，先默认这条线为右线lane_base_RT，后续继续判断
 
 ```python
 # flag_lane = 0: 正常2线
