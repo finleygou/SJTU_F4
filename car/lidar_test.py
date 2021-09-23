@@ -148,13 +148,12 @@ def laserCallback(scan):
             flag_scene = 1
             flag_lidar_assist = 1
 
-    elif right_forward_PN > 60 and left_forward_PN > 60:
+    elif right_forward_PN > 70 and left_forward_PN > 70:    # 60，60
         counter2 += 1
         if counter2 > 2:
             flag_scene = 2
-            if left_back_PN > 70 or right_back_PN > 70:    # 60，60
+            if left_back_PN > 60 or right_back_PN > 60:
                 flag_scene = 3
-
                 right_lane = ranges[240:480]
                 right_lane = list(right_lane)  # 雷达收到的是tuple
                 theta = [-math.sin(minAngle + i * angleInc) for i in range(240, 480)]
@@ -170,13 +169,17 @@ def laserCallback(scan):
                 # print('avg_dist_rt:', avg_dist_rt)
                 # print('DirectionError:', DirectionError)
                 # print('cmdSteer:', cmdSteer)
-                ExpectedSpeed_scan = 20
+                ExpectedSpeed_scan = 20  # flag_scene = 3时的速度
                 Steer_PID_update()
-
                 scan_vel.angular.z = - cmdSteer
                 scan_vel.linear.x = ExpectedSpeed_scan  # scan expectedspeed
                 pub2.publish(scan_vel)
-    else:
+            else:
+                ExpectedSpeed_scan = 15  # flag_scene = 2时的速度
+                scan_vel.linear.x = ExpectedSpeed_scan  # scan expectedspeed
+                pub2.publish(scan_vel)
+
+    else:   # flag_scene = 1
         if counter1 > 5:
             counter1 = 0
         counter2 = 0
@@ -221,7 +224,7 @@ def laserCallback(scan):
     if flag_scene == 0:
         obs_range = ranges[650:790]   # some degree，点的数目限制确保不会与flag_scene = 2冲突（70+70）
         dist_min = np.min(obs_range)
-        if dist_min < 0.8:  # 最近的点
+        if dist_min < 0.8:  # 最近的点，待调
             flag_obstacle = 1
         else:
             flag_obstacle = 0

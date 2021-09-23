@@ -180,9 +180,9 @@ def kineticCtrl():
             # servo = servodata_scan
             servo = servodata
             speed = ExpectedSpeed_scan
-        elif flag_scan == 1: # 到了停车位
+        elif flag_scan == 1: # 到了停车位，这里的速度设定是在lane_detection里面给出的
             servo = servodata
-            speed = ExpectedSpeed_scan
+            speed = ExpectedSpeed
         else:                # 非激光雷达情况
             servo = servodata
             speed = ExpectedSpeed

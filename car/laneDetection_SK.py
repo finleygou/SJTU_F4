@@ -92,7 +92,7 @@ mtx = np.array([[1.15777930e+03, 0, 6.67111054e+02], [0, 1.15282291e+03, 3.86128
 dist = np.array([[-0.24688775, -0.02373133, -0.00109842, 0.00035108, -0.00258571]])
 map1 = 0
 map2 = 0
-def labBSelect(img, thresh=(180, 255)):
+def labBSelect(img, thresh=(175, 255)):
     # 1) Convert to LAB color space
     lab = cv2.cvtColor(img, cv2.COLOR_BGR2Lab)
     lab_b = lab[:, :, 2]
@@ -329,11 +329,8 @@ class camera:
                     R = 0
                     ExpectedSpeed = 30
                 else:
-                    R = 10000
-                    ExpectedSpeed = 30
-
-                if flag_scene == 2:
-                    ExpectedSpeed = 40
+                    R = 10000   # 弯道
+                    ExpectedSpeed = 25
 
                 #print("R is:",R)
 
