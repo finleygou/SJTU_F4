@@ -32,10 +32,20 @@ lane_vel_scan = Twist()  # 这个变量是通过激光雷达后计算出的小�
 servodata_scan = 0
 ExpectedSpeed_scan = 0
 flag_scan = 0
+is_obstacle = 0
+acceleration = 0
 
 def thread_job():
 
     rospy.spin()
+
+def obscallback(msg):
+    global is_obstacle
+    is_obstacle = msg.data
+
+def acc_callback(msg):
+    global acceleration
+    acceleration = msg.data
 
 def lanecallback(msg):
     global lane_vel
@@ -139,7 +149,7 @@ def kineticCtrl():
 
     add_thread.start()
 
-    rate = rospy.Rate(8) # 10hz
+    rate = rospy.Rate(10) # 10hz
     rospy.Subscriber("/lane_vel", Twist, lanecallback)
     rospy.Subscriber("/traffic", Int32, trafficcallback)
     rospy.Subscriber("/conf", Int32, confcallback)
@@ -148,10 +158,12 @@ def kineticCtrl():
     rospy.Subscriber("/back_distance", Int32, distcallback)
     rospy.Subscriber("/scan_vel", Twist, scanVelcallback)
     rospy.Subscriber("/scanInfo", Int32, scanInfocallback)
+    rospy.Subscriber("/obstacle_detection", Int32, obscallback)
+    rospy.Subscriber("/vcu/aZ", Int32, acc_callback)
     # rospy.Subscriber("/vcu/ActualVehicleDirection", Int32, Directioncallback)
     #更新频率是1hz
     rospy.loginfo(rospy.is_shutdown())
-    n=1
+    n = 5  # 取个平均
     servodata_list = n * [servodata]
     while not rospy.is_shutdown():
         # KINETIC CONTROL CODE HERE
@@ -244,7 +256,7 @@ def kineticCtrl():
             if stage_idx == 1:
                 stage_idx = stage_idx + 1
                 gear = 3
-                # 进行等待操作
+                # 进行等待操作， 需要控制到20cm以内
                 # 示例
         elif traffic_data == 4 and conf > 92:  # 看到最低限速标志
             if stage_idx == 2:
@@ -255,16 +267,28 @@ def kineticCtrl():
             if stage_idx == 3:
                 stage_idx = stage_idx + 1
                 gear = 1
-
         # 根据道路标志控速
         if stage_idx == 1:
             speed = min(speed, 50)
         elif stage_idx == 3:
             speed = max(speed, 50)
 
+        # 行人检测
+        if flag_scan == 0 and is_obstacle == 1:
+            gear = 3
+        else:
+            pass
+
+        # 下坡减速
+        if abs(acceleration) > 0.1:  # 待测
+            gear = 3
+        else:
+            pass
+
+
         # 直接控制底盘的指令
-        pub1.publish(manul)
         # pub2.publish(direction)
+        pub1.publish(manul)
         pub3.publish(speed)
         pub4.publish(gear)
         rate.sleep()

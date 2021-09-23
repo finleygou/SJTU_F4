@@ -40,6 +40,7 @@ flag_lidar_assist = 0
 
 scan_vel = Twist()
 
+flag_obstacle = 0
 
 def constrain(min, max, input):
     if input <= min:
@@ -55,9 +56,9 @@ def Steer_PID_update():
     global ExpectedSteer, CurrentSteer, cmdSteer
     global DirectionError, last_DirectionError, DirectionError_Sum, DirectionError_Diff
 
-    k_p = 0.05  # 0.04
+    k_p = 20  # Error的数量级在0.1以下
     k_i = 0
-    k_d = 0.1  # 0.3
+    k_d = 5  # 0.3
 
     DirectionError_Sum += DirectionError
     DirectionError_Diff = DirectionError - last_DirectionError
@@ -77,6 +78,7 @@ def laserCallback(scan):
     global backDist
     global flag_lidar_assist
     global ExpectedSpeed_scan
+    global flag_obstacle
     ################ lidar data into XY points ###############
     # Store maxAngle of lidar
     maxAngle = scan.angle_max
@@ -150,7 +152,7 @@ def laserCallback(scan):
         counter2 += 1
         if counter2 > 2:
             flag_scene = 2
-            if left_back_PN > 60 or right_back_PN > 60:
+            if left_back_PN > 70 or right_back_PN > 70:    # 60，60
                 flag_scene = 3
 
                 right_lane = ranges[240:480]
@@ -168,7 +170,7 @@ def laserCallback(scan):
                 # print('avg_dist_rt:', avg_dist_rt)
                 # print('DirectionError:', DirectionError)
                 # print('cmdSteer:', cmdSteer)
-                ExpectedSpeed_scan = 35
+                ExpectedSpeed_scan = 20
                 Steer_PID_update()
 
                 scan_vel.angular.z = - cmdSteer
@@ -185,7 +187,7 @@ def laserCallback(scan):
     if flag_lidar_assist == 1 and board_counter > 40:
         flag_scene = 1
 
-    if flag_scene == 0:
+    if flag_scene == 0:  # 保证停车那段路一直是flag_scene = 1
         flag_lidar_assist = 0
 
     print('flag_scene:', flag_scene)
@@ -214,6 +216,18 @@ def laserCallback(scan):
     pub3.publish(backDist)
     print('back_distance :', backDist)
 
+############################## obstacle detection ##############################
+    # 根据规则，只在flag_scene = 0时检测是否有机器人
+    if flag_scene == 0:
+        obs_range = ranges[650:790]   # some degree，点的数目限制确保不会与flag_scene = 2冲突（70+70）
+        dist_min = np.min(obs_range)
+        if dist_min < 0.8:  # 最近的点
+            flag_obstacle = 1
+        else:
+            flag_obstacle = 0
+            pub4.publish(flag_obstacle)
+
+
     print('   ')
     print('   ')
 
@@ -225,6 +239,7 @@ if __name__ == "__main__":
         pub1 = rospy.Publisher('/scanInfo', Int32, queue_size=10)  # publish vel&steer
         pub2 = rospy.Publisher('/scan_vel', Twist, queue_size=10)
         pub3 = rospy.Publisher('/back_distance', Int32, queue_size=10)
+        pub4 = rospy.Publisher('/obstacle_detection', Int32, queue_size=10)
         rate = rospy.Rate(10)
         rospy.spin()
     except rospy.ROSInterruptException:
