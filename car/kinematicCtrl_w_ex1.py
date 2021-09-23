@@ -49,7 +49,7 @@ def lanecallback(msg):
     #rospy.loginfo('lane_vel.angular.z = %f',lane_vel.angular.z)
 
 def scanVelcallback(msg):
-    global flag_scan_first
+    # global flag_scan_first
     # 命名重复
     # global lane_vel
     # 缺少ExpectedSpeed_scan
@@ -58,7 +58,7 @@ def scanVelcallback(msg):
     global servodata_scan
 
     lane_vel_scan = msg
-    flag_scan_first = 1
+    # flag_scan_first = 1
     _servoCmdMsg = msg.angular.z * angularScale + 90
     servodata_scan = min(max(0, _servoCmdMsg), 180)
     servodata_scan = 100 - servodata_scan * 100 / 180
@@ -161,10 +161,17 @@ def kineticCtrl():
    
         # if State is GO AROUND
         #if(lane_vel.linear.x == 0): # STOP SIGNAL FROM HILENS
-        if flag_scan_first != 0:  # 激光雷达优先级更高
+        if flag_scan == 3:   # 激光雷达优先级更高
             servo = servodata_scan
             speed = ExpectedSpeed_scan
-        else:
+        elif flag_scan == 2: # 快上桥或快进洞 待商榷
+            # servo = servodata_scan
+            servo = servodata
+            speed = ExpectedSpeed_scan
+        elif flag_scan == 1: # 到了停车位
+            servo = servodata
+            speed = ExpectedSpeed_scan
+        else:                # 非激光雷达情况
             servo = servodata
             speed = ExpectedSpeed
  
@@ -232,7 +239,7 @@ def kineticCtrl():
             if stage_idx == 0:
                 stage_idx = stage_idx + 1
                 gear = 1
-                speed = min(speed, 50)
+                # speed = min(speed, 50)
         elif traffic_data == 1 and conf > 30:  # 看到人行横道
             if stage_idx == 1:
                 stage_idx = stage_idx + 1
@@ -243,12 +250,17 @@ def kineticCtrl():
             if stage_idx == 2:
                 stage_idx = stage_idx + 1
                 gear = 1
-                speed = max(50, speed)
+                # speed = max(50, speed)
         elif traffic_data == 5 and conf > 80:  # 看到解限速标志
             if stage_idx == 3:
                 stage_idx = stage_idx + 1
                 gear = 1
-             
+
+        # 根据道路标志控速
+        if stage_idx == 1:
+            speed = min(speed, 50)
+        elif stage_idx == 3:
+            speed = max(speed, 50)
 
         # 直接控制底盘的指令
         pub1.publish(manul)
